@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VM 2026 — Tipset</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; font-size: 15px; }
+  .app { max-width: 680px; margin: 0 auto; padding: 1rem; }
+  header { padding: 1.5rem 0 1rem; border-bottom: 1px solid #e0e0d8; margin-bottom: 1.25rem; }
+  header h1 { font-size: 22px; font-weight: 600; }
+  header p { font-size: 13px; color: #666; margin-top: 2px; }
+  .user-bar { font-size: 13px; color: #555; margin-top: 6px; }
+  .user-bar span { font-weight: 500; color: #1a1a1a; }
+  nav { display: flex; gap: 6px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .nav-btn { padding: 7px 16px; font-size: 13px; border: 1px solid #ccc; border-radius: 20px; background: white; color: #333; cursor: pointer; transition: all 0.15s; }
+  .nav-btn:hover { border-color: #999; }
+  .nav-btn.active { background: #1a1a1a; color: white; border-color: #1a1a1a; }
+  .section { display: none; }
+  .section.active { display: block; }
+  .card { background: white; border: 1px solid #e0e0d8; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+  .card h3 { font-size: 14px; font-weight: 600; color: #444; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  input[type=text], input[type=password], select {
+    width: 100%; padding: 10px 12px; font-size: 14px;
+    border: 1px solid #ddd; border-radius: 8px; background: white;
+    color: #1a1a1a; margin-bottom: 0.75rem; outline: none;
+  }
+  input:focus, select:focus { border-color: #1a1a1a; }
+  .btn { width: 100%; padding: 11px; font-size: 14px; font-weight: 500; background: #1a1a1a; color: white; border: none; border-radius: 8px; cursor: pointer; transition: opacity 0.15s; }
+  .btn:hover { opacity: 0.85; }
+  .btn-outline { background: white; color: #1a1a1a; border: 1px solid #ccc; }
+  .btn-outline:hover { background: #f5f5f0; opacity: 1; }
+  .msg { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 0.75rem; }
+  .msg.ok { background: #e8f5e9; color: #2e7d32; }
+  .msg.err { background: #fdecea; color: #c62828; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 1.25rem; }
+  .tab { padding: 6px 14px; font-size: 13px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; background: white; color: #555; transition: all 0.15s; }
+  .tab.active { background: #1a1a1a; color: white; border-color: #1a1a1a; }
+  .group-label { font-size: 11px; color: #999; margin: 1rem 0 0.4rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+  .match-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f0f0e8; }
+  .match-row:last-child { border-bottom: none; }
+  .match-num { color: #bbb; font-size: 11px; width: 28px; flex-shrink: 0; }
+  .teams { flex: 1; font-size: 13px; line-height: 1.3; }
+  .outcome-btns { display: flex; gap: 3px; flex-shrink: 0; }
+  .outcome-btn { padding: 4px 8px; font-size: 11px; border: 1px solid #ddd; border-radius: 5px; background: white; color: #555; cursor: pointer; white-space: nowrap; transition: all 0.1s; }
+  .outcome-btn:hover { border-color: #999; }
+  .outcome-btn.selected { background: #1a1a1a; color: white; border-color: #1a1a1a; }
+  .tag { display: inline-block; font-size: 12px; padding: 4px 10px; border-radius: 16px; margin: 3px; cursor: pointer; border: 1px solid #ddd; background: white; color: #444; transition: all 0.1s; }
+  .tag:hover { border-color: #999; }
+  .tag.sel { background: #1a1a1a; color: white; border-color: #1a1a1a; }
+  .tag.disabled { opacity: 0.4; cursor: default; }
+  .progress-bar { height: 4px; background: #eee; border-radius: 2px; margin-bottom: 0.5rem; }
+  .progress-fill { height: 100%; background: #1a1a1a; border-radius: 2px; transition: width 0.3s; }
+  .progress-text { font-size: 12px; color: #888; margin-bottom: 1rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 8px 10px; color: #888; font-weight: 500; border-bottom: 1px solid #e0e0d8; font-size: 12px; }
+  td { padding: 10px 10px; border-bottom: 1px solid #f0f0e8; }
+  tr:last-child td { border-bottom: none; }
+  .rank-num { color: #bbb; font-size: 12px; }
+  .rank-1 { color: #c9a227; font-weight: 600; }
+  .pts-total { font-weight: 600; font-size: 15px; }
+  .winner-badge { display: inline-block; background: #fff8e1; color: #c9a227; font-size: 11px; padding: 2px 8px; border-radius: 10px; border: 1px solid #f0d060; margin-left: 6px; }
+  .loader { text-align: center; padding: 2rem; color: #888; font-size: 13px; }
+  .save-sticky { position: sticky; bottom: 1rem; z-index: 10; padding-top: 0.5rem; }
+  @media (max-width: 480px) {
+    .outcome-btn { padding: 4px 5px; font-size: 10px; }
+    .teams { font-size: 12px; }
+    th, td { padding: 8px 6px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>🏆 VM 2026 — Tipset</h1>
+    <p>11 juni – 19 juli · USA, Kanada, Mexiko</p>
+    <div class="user-bar" id="user-bar" style="display:none">Inloggad som <span id="user-bar-name"></span> · <a href="#" onclick="logout()" style="color:#888;font-size:12px">Logga ut</a></div>
+  </header>
+
+  <nav>
+    <button class="nav-btn active" onclick="showSection('register', this)">Hem</button>
+    <button class="nav-btn" onclick="showSection('tipps', this)">Mina tips</button>
+    <button class="nav-btn" onclick="showSection('table', this)">Tabell</button>
+    <button class="nav-btn" id="admin-nav-btn" style="display:none" onclick="showSection('admin', this)">Admin</button>
+  </nav>
+
+  <!-- REGISTER / LOGIN -->
+  <div id="register" class="section active">
+    <div class="card" id="reg-card">
+      <h3>Registrera dig</h3>
+      <input type="text" id="reg-name" placeholder="Ditt namn" />
+      <input type="password" id="reg-pin" placeholder="Välj en PIN-kod (4 siffror)" maxlength="4" />
+      <button class="btn" onclick="register()">Registrera och börja tippa</button>
+      <div id="reg-msg"></div>
+    </div>
+    <div class="card">
+      <h3>Logga in</h3>
+      <input type="text" id="login-name" placeholder="Ditt namn" />
+      <input type="password" id="login-pin" placeholder="PIN-kod" maxlength="4" />
+      <button class="btn" onclick="login()">Logga in</button>
+      <div id="login-msg"></div>
+    </div>
+    <div class="card" style="border-style:dashed">
+      <h3>Admin</h3>
+      <input type="password" id="admin-pin-input" placeholder="Admin-PIN" />
+      <button class="btn btn-outline" onclick="adminLogin()">Logga in som admin</button>
+      <div id="admin-login-msg"></div>
+    </div>
+  </div>
+
+  <!-- TIPPS -->
+  <div id="tipps" class="section">
+    <div id="tipps-req" class="msg err" style="display:none">Logga in för att tippa.</div>
+    <div id="tipps-locked" class="msg" style="display:none;background:#fff8e1;color:#795508">Tippningen är låst — turneringen har startat.</div>
+    <div id="tipps-content" style="display:none">
+      <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+      <div class="progress-text" id="prog-text">Grupptips: 0/48 klara</div>
+      <div class="tabs">
+        <button class="tab active" onclick="showTab('gruppspel', this)">Gruppspel (48)</button>
+        <button class="tab" onclick="showTab('slutspel', this)">Slutspel & övrigt</button>
+      </div>
+      <div id="tab-gruppspel">
+        <div id="matches-container"></div>
+      </div>
+      <div id="tab-slutspel" style="display:none">
+        <div class="card">
+          <h3>Topp 16 — välj 16 lag (1p/lag)</h3>
+          <div id="top16-container"></div>
+        </div>
+        <div class="card">
+          <h3>Topp 8 — kvartsfinal (2p/lag)</h3>
+          <div id="top8-container"></div>
+        </div>
+        <div class="card">
+          <h3>Topp 4 — semifinal (3p/lag)</h3>
+          <div id="top4-container"></div>
+        </div>
+        <div class="card">
+          <h3>Finalisterna — 2 lag (4p/lag)</h3>
+          <div id="top2-container"></div>
+        </div>
+        <div class="card">
+          <h3>Turneringsvinnare (6p)</h3>
+          <select id="winner-select"><option value="">Välj land...</option></select>
+        </div>
+        <div class="card">
+          <h3>Skyttekung (5p)</h3>
+          <input type="text" id="top-scorer" placeholder="Spelarens namn" />
+        </div>
+      </div>
+      <div class="save-sticky">
+        <button class="btn" onclick="saveTips()" id="save-btn">Spara mina tips</button>
+        <div id="save-msg"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div id="table" class="section">
+    <div class="loader" id="table-loader">Laddar tabell...</div>
+    <div id="table-content" style="display:none">
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Namn</th>
+              <th>Grupp</th>
+              <th>Slutspel</th>
+              <th>Vinnare</th>
+              <th>Skytte</th>
+              <th>Totalt</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+      <p style="font-size:11px;color:#aaa;margin-top:0.75rem" id="table-updated"></p>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div id="admin" class="section">
+    <div class="tabs">
+      <button class="tab active" onclick="showAdminTab('matches', this)">Matcher</button>
+      <button class="tab" onclick="showAdminTab('knockout', this)">Slutspel</button>
+      <button class="tab" onclick="showAdminTab('special', this)">Vinnare & Skytte</button>
+    </div>
+    <div id="admin-matches-panel">
+      <div id="admin-matches-container"></div>
+    </div>
+    <div id="admin-knockout-panel" style="display:none">
+      <div class="card">
+        <h3>Ange lag som gått vidare</h3>
+        <p style="font-size:12px;color:#888;margin-bottom:1rem">Kommaseparerade lagnamn — stavning måste matcha exakt</p>
+        <label style="font-size:13px;color:#555;display:block;margin-bottom:4px">Topp 16</label>
+        <input type="text" id="actual-top16" placeholder="Brasilien, Frankrike, ..." />
+        <label style="font-size:13px;color:#555;display:block;margin-bottom:4px">Topp 8</label>
+        <input type="text" id="actual-top8" placeholder="8 lag" />
+        <label style="font-size:13px;color:#555;display:block;margin-bottom:4px">Topp 4</label>
+        <input type="text" id="actual-top4" placeholder="4 lag" />
+        <label style="font-size:13px;color:#555;display:block;margin-bottom:4px">Finalisterna</label>
+        <input type="text" id="actual-top2" placeholder="2 lag" />
+        <button class="btn" onclick="saveKnockout()">Spara slutspelsresultat</button>
+        <div id="knockout-msg"></div>
+      </div>
+    </div>
+    <div id="admin-special-panel" style="display:none">
+      <div class="card">
+        <h3>Turneringsvinnare & skyttekung</h3>
+        <label style="font-size:13px;color:#555;display:block;margin-bottom:4px">Turneringsvinnare</label>
+        <input type="text" id="actual-winner" placeholder="Land" />
+        <label style="font-size:13px;color:#555;display:block;margin-bottom:4px">Skyttekung</label>
+        <input type="text" id="actual-scorer" placeholder="Spelarens namn" />
+        <button class="btn" onclick="saveSpecial()">Spara</button>
+        <div id="special-msg"></div>
+      </div>
+    </div>
+    <div style="margin-top:1rem">
+      <button class="btn btn-outline" onclick="recalcAll()">Räkna om alla poäng</button>
+      <div id="recalc-msg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://uypxpckyyuxvgisctukn.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5cHhwY2t5eXV4dmdpc2N0dWtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwNDUzNjEsImV4cCI6MjA5NTYyMTM2MX0.UqAJcWAG31jH8Dh3HwXlbr8qseDW012H5j5Yi8R8r7I';
+const ADMIN_PIN = 'vm2026';
+const LOCK_DATE = new Date('2026-06-11T00:00:00');
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const GROUPS = {
+  A: ['Mexico','South Africa','Ecuador','Senegal'],
+  B: ['Canada','Bosnia and Herzegovina','Qatar','Switzerland'],
+  C: ['Uruguay','Slovakia','Cameroon','Egypt'],
+  D: ['USA','Paraguay','Australia','Turkey'],
+  E: ['Germany','Japan','Chile','Belgium'],
+  F: ['Spain','Cabo Verde','Saudi Arabia','Czechia'],
+  G: ['Brazil','Morocco','Croatia','Austria'],
+  H: ['France','Jordan','England','Serbia'],
+  I: ['Portugal','DRC','Nigeria','Peru'],
+  J: ['Argentina','North Macedonia','Indonesia','New Zealand'],
+  K: ['Netherlands','Iran','UAE','Venezuela'],
+  L: ['Colombia','South Korea','Uzbekistan','Haiti']
+};
+const ALL_TEAMS = Object.values(GROUPS).flat();
+
+function generateMatches() {
+  let matches = [], num = 1;
+  Object.entries(GROUPS).forEach(([g, teams]) => {
+    for (let i = 0; i < teams.length; i++)
+      for (let j = i+1; j < teams.length; j++)
+        matches.push({ id: `M${num++}`, group: g, home: teams[i], away: teams[j] });
+  });
+  return matches;
+}
+const MATCHES = generateMatches();
+
+let currentUser = null;
+let isAdmin = false;
+let isLocked = new Date() >= LOCK_DATE;
+let currentTips = { matches: {}, top16: [], top8: [], top4: [], top2: [], winner: '', scorer: '' };
+let resultsCache = { matches: {}, top16: [], top8: [], top4: [], top2: [], winner: '', scorer: '' };
+
+function showSection(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (id === 'tipps') renderTipps();
+  if (id === 'table') loadTable();
+  if (id === 'admin') renderAdminMatches();
+}
+
+function showTab(t, btn) {
+  document.getElementById('tab-gruppspel').style.display = t === 'gruppspel' ? '' : 'none';
+  document.getElementById('tab-slutspel').style.display = t === 'slutspel' ? '' : 'none';
+  document.querySelectorAll('.tabs .tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+
+function showAdminTab(t, btn) {
+  ['matches','knockout','special'].forEach(name => {
+    document.getElementById(`admin-${name}-panel`).style.display = t === name ? '' : 'none';
+  });
+  document.querySelectorAll('#admin .tabs .tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+
+async function register() {
+  const name = document.getElementById('reg-name').value.trim();
+  const pin = document.getElementById('reg-pin').value.trim();
+  const msg = document.getElementById('reg-msg');
+  if (!name || pin.length < 4) { showMsg(msg, 'Ange namn och 4-siffrig PIN.', 'err'); return; }
+  const { error } = await sb.from('users').insert({ name, pin });
+  if (error) { showMsg(msg, error.code === '23505' ? 'Namnet är redan taget.' : 'Fel vid registrering.', 'err'); return; }
+  await sb.from('tips').insert({ user_name: name, data: currentTips });
+  await sb.from('scores').insert({ user_name: name, points: 0 });
+  currentUser = name;
+  showMsg(msg, `Välkommen, ${name}! Går till tippningen...`, 'ok');
+  updateUserBar();
+  setTimeout(() => {
+    showSection('tipps', document.querySelector('.nav-btn:nth-child(2)'));
+    document.querySelector('.nav-btn:nth-child(1)').classList.remove('active');
+  }, 800);
+}
+
+async function login() {
+  const name = document.getElementById('login-name').value.trim();
+  const pin = document.getElementById('login-pin').value.trim();
+  const msg = document.getElementById('login-msg');
+  const { data, error } = await sb.from('users').select('pin').eq('name', name).single();
+  if (error || !data || data.pin !== pin) { showMsg(msg, 'Fel namn eller PIN.', 'err'); return; }
+  currentUser = name;
+  const { data: tipsRow } = await sb.from('tips').select('data').eq('user_name', name).single();
+  if (tipsRow) currentTips = tipsRow.data;
+  showMsg(msg, `Inloggad som ${name}.`, 'ok');
+  updateUserBar();
+}
+
+function adminLogin() {
+  const pin = document.getElementById('admin-pin-input').value;
+  const msg = document.getElementById('admin-login-msg');
+  if (pin !== ADMIN_PIN) { showMsg(msg, 'Fel PIN.', 'err'); return; }
+  isAdmin = true;
+  document.getElementById('admin-nav-btn').style.display = '';
+  showMsg(msg, 'Admin-läge aktiverat.', 'ok');
+}
+
+function logout() {
+  currentUser = null;
+  isAdmin = false;
+  document.getElementById('user-bar').style.display = 'none';
+  document.getElementById('admin-nav-btn').style.display = 'none';
+  currentTips = { matches: {}, top16: [], top8: [], top4: [], top2: [], winner: '', scorer: '' };
+}
+
+function updateUserBar() {
+  document.getElementById('user-bar').style.display = '';
+  document.getElementById('user-bar-name').textContent = currentUser;
+}
+
+function renderTipps() {
+  if (!currentUser) {
+    document.getElementById('tipps-req').style.display = '';
+    document.getElementById('tipps-content').style.display = 'none';
+    return;
+  }
+  document.getElementById('tipps-req').style.display = 'none';
+  if (isLocked) {
+    document.getElementById('tipps-locked').style.display = '';
+    document.getElementById('tipps-content').style.display = '';
+    document.getElementById('save-btn').style.display = 'none';
+  }
+  document.getElementById('tipps-content').style.display = '';
+  renderMatches();
+  renderKnockoutPickers();
+  updateProgress();
+}
+
+function renderMatches() {
+  const container = document.getElementById('matches-container');
+  container.innerHTML = '';
+  let currentGroup = '';
+  MATCHES.forEach(m => {
+    if (m.group !== currentGroup) {
+      currentGroup = m.group;
+      const gl = document.createElement('div');
+      gl.className = 'group-label';
+      gl.textContent = `Grupp ${m.group}`;
+      container.appendChild(gl);
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.id = `gc-${m.group}`;
+      container.appendChild(card);
+    }
+    const card = document.getElementById(`gc-${m.group}`);
+    const sel = currentTips.matches[m.id] || '';
+    const row = document.createElement('div');
+    row.className = 'match-row';
+    row.innerHTML = `
+      <span class="match-num">${m.id}</span>
+      <span class="teams">${m.home}<br><span style="color:#aaa;font-size:11px">vs</span> ${m.away}</span>
+      <div class="outcome-btns">
+        <button class="outcome-btn ${sel===m.home?'selected':''}" onclick="selectOutcome('${m.id}','${m.home}',this)">${m.home.split(' ')[0]}</button>
+        <button class="outcome-btn ${sel==='X'?'selected':''}" onclick="selectOutcome('${m.id}','X',this)">X</button>
+        <button class="outcome-btn ${sel===m.away?'selected':''}" onclick="selectOutcome('${m.id}','${m.away}',this)">${m.away.split(' ')[0]}</button>
+      </div>`;
+    card.appendChild(row);
+  });
+}
+
+function renderKnockoutPickers() {
+  [['top16',16,'top16-container'],['top8',8,'top8-container'],['top4',4,'top4-container'],['top2',2,'top2-container']].forEach(([key,max,cid]) => {
+    const el = document.getElementById(cid);
+    el.innerHTML = `<p style="font-size:12px;color:#888;margin-bottom:0.5rem">Välj ${max} lag (<span id="${cid}-count">${(currentTips[key]||[]).length}</span>/${max} valda)</p>`;
+    ALL_TEAMS.forEach(t => {
+      const sel = (currentTips[key]||[]).includes(t);
+      const tag = document.createElement('span');
+      tag.className = 'tag' + (sel ? ' sel' : '');
+      tag.textContent = t;
+      tag.onclick = () => toggleKnockout(key, t, max, tag, `${cid}-count`);
+      el.appendChild(tag);
+    });
+  });
+  const ws = document.getElementById('winner-select');
+  ws.innerHTML = '<option value="">Välj land...</option>';
+  ALL_TEAMS.forEach(t => {
+    const o = document.createElement('option');
+    o.value = t; o.textContent = t;
+    if (currentTips.winner === t) o.selected = true;
+    ws.appendChild(o);
+  });
+  ws.onchange = () => { currentTips.winner = ws.value; };
+  const ts = document.getElementById('top-scorer');
+  ts.value = currentTips.scorer || '';
+  ts.oninput = () => { currentTips.scorer = ts.value; };
+}
+
+function toggleKnockout(key, team, max, el, countId) {
+  if (isLocked) return;
+  if (!currentTips[key]) currentTips[key] = [];
+  const idx = currentTips[key].indexOf(team);
+  if (idx > -1) {
+    currentTips[key].splice(idx, 1);
+    el.classList.remove('sel');
+  } else if (currentTips[key].length < max) {
+    currentTips[key].push(team);
+    el.classList.add('sel');
+  }
+  document.getElementById(countId).textContent = currentTips[key].length;
+}
+
+function selectOutcome(matchId, outcome, btn) {
+  if (isLocked) return;
+  currentTips.matches[matchId] = outcome;
+  btn.closest('.match-row').querySelectorAll('.outcome-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  updateProgress();
+}
+
+function updateProgress() {
+  const done = Object.keys(currentTips.matches).length;
+  const pct = Math.round((done / 48) * 100);
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-text').textContent = `Grupptips: ${done}/48 klara`;
+}
+
+async function saveTips() {
+  if (isLocked) return;
+  const btn = document.getElementById('save-btn');
+  const msg = document.getElementById('save-msg');
+  btn.textContent = 'Sparar...';
+  btn.disabled = true;
+  const { error } = await sb.from('tips').upsert({ user_name: currentUser, data: currentTips, updated_at: new Date().toISOString() }, { onConflict: 'user_name' });
+  btn.textContent = 'Spara mina tips';
+  btn.disabled = false;
+  if (error) { showMsg(msg, 'Fel vid sparning. Försök igen.', 'err'); return; }
+  showMsg(msg, 'Tips sparade!', 'ok');
+  setTimeout(() => msg.textContent = '', 2000);
+}
+
+async function loadTable() {
+  document.getElementById('table-loader').style.display = '';
+  document.getElementById('table-content').style.display = 'none';
+  const [usersRes, scoresRes, resultsRes] = await Promise.all([
+    sb.from('users').select('name'),
+    sb.from('scores').select('user_name,points').order('points', { ascending: false }),
+    sb.from('results').select('data').limit(1).single()
+  ]);
+  if (resultsRes.data) resultsCache = resultsRes.data.data;
+  const tipsRes = await sb.from('tips').select('user_name,data');
+  const tipsMap = {};
+  if (tipsRes.data) tipsRes.data.forEach(r => tipsMap[r.user_name] = r.data);
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = '';
+  const scores = scoresRes.data || [];
+  if (!scores.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:1.5rem">Inga deltagare ännu</td></tr>';
+  } else {
+    scores.forEach((s, i) => {
+      const tips = tipsMap[s.user_name] || {};
+      let gPts = 0, sPts = 0, wPts = 0, skPts = 0;
+      MATCHES.forEach(m => { if (resultsCache.matches[m.id] && tips.matches && tips.matches[m.id] === resultsCache.matches[m.id]) gPts++; });
+      const tiers = ['top16','top8','top4','top2'], tp = [1,2,3,4];
+      tiers.forEach((t,idx) => { const actual = resultsCache[t]||[]; (tips[t]||[]).forEach(team => { if (actual.includes(team)) sPts += tp[idx]; }); });
+      if (resultsCache.winner && tips.winner === resultsCache.winner) wPts = 6;
+      if (resultsCache.scorer && tips.scorer && tips.scorer.toLowerCase().trim() === resultsCache.scorer.toLowerCase().trim()) skPts = 5;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="rank-num ${i===0?'rank-1':''}">${i+1}${i===0?' 🥇':''}</td>
+        <td>${s.user_name}${s.user_name === currentUser ? '<span class="winner-badge">dig</span>' : ''}</td>
+        <td>${gPts}</td><td>${sPts}</td><td>${wPts}</td><td>${skPts}</td>
+        <td class="pts-total">${s.points}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+  document.getElementById('table-updated').textContent = `Uppdaterad: ${new Date().toLocaleString('sv-SE')}`;
+  document.getElementById('table-loader').style.display = 'none';
+  document.getElementById('table-content').style.display = '';
+}
+
+function renderAdminMatches() {
+  const container = document.getElementById('admin-matches-container');
+  container.innerHTML = '';
+  let currentGroup = '';
+  MATCHES.forEach(m => {
+    if (m.group !== currentGroup) {
+      currentGroup = m.group;
+      const gl = document.createElement('div');
+      gl.className = 'group-label'; gl.textContent = `Grupp ${m.group}`;
+      container.appendChild(gl);
+      const card = document.createElement('div');
+      card.className = 'card'; card.id = `admin-gc-${m.group}`;
+      container.appendChild(card);
+    }
+    const card = document.getElementById(`admin-gc-${m.group}`);
+    const res = resultsCache.matches[m.id] || '';
+    const row = document.createElement('div');
+    row.className = 'match-row';
+    row.innerHTML = `
+      <span class="match-num">${m.id}</span>
+      <span class="teams" style="font-size:12px">${m.home} – ${m.away}</span>
+      <div class="outcome-btns">
+        <button class="outcome-btn ${res===m.home?'selected':''}" onclick="setResult('${m.id}','${m.home}',this)">${m.home.split(' ')[0]}</button>
+        <button class="outcome-btn ${res==='X'?'selected':''}" onclick="setResult('${m.id}','X',this)">X</button>
+        <button class="outcome-btn ${res===m.away?'selected':''}" onclick="setResult('${m.id}','${m.away}',this)">${m.away.split(' ')[0]}</button>
+      </div>`;
+    card.appendChild(row);
+  });
+}
+
+async function setResult(matchId, outcome, btn) {
+  resultsCache.matches[matchId] = outcome;
+  btn.closest('.match-row').querySelectorAll('.outcome-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  await saveResults();
+}
+
+async function saveResults() {
+  const { data: existing } = await sb.from('results').select('id').limit(1).single();
+  if (existing) {
+    await sb.from('results').update({ data: resultsCache, updated_at: new Date().toISOString() }).eq('id', existing.id);
+  } else {
+    await sb.from('results').insert({ data: resultsCache });
+  }
+}
+
+async function saveKnockout() {
+  const parse = id => document.getElementById(id).value.split(',').map(s=>s.trim()).filter(Boolean);
+  resultsCache.top16 = parse('actual-top16');
+  resultsCache.top8 = parse('actual-top8');
+  resultsCache.top4 = parse('actual-top4');
+  resultsCache.top2 = parse('actual-top2');
+  await saveResults();
+  showMsg(document.getElementById('knockout-msg'), 'Sparat!', 'ok');
+}
+
+async function saveSpecial() {
+  resultsCache.winner = document.getElementById('actual-winner').value.trim();
+  resultsCache.scorer = document.getElementById('actual-scorer').value.trim();
+  await saveResults();
+  showMsg(document.getElementById('special-msg'), 'Sparat!', 'ok');
+}
+
+async function recalcAll() {
+  const [usersRes, tipsRes] = await Promise.all([
+    sb.from('users').select('name'),
+    sb.from('tips').select('user_name,data')
+  ]);
+  const tipsMap = {};
+  if (tipsRes.data) tipsRes.data.forEach(r => tipsMap[r.user_name] = r.data);
+  for (const u of (usersRes.data || [])) {
+    const tips = tipsMap[u.name] || {};
+    let pts = 0;
+    MATCHES.forEach(m => { if (resultsCache.matches[m.id] && tips.matches && tips.matches[m.id] === resultsCache.matches[m.id]) pts++; });
+    const tiers = ['top16','top8','top4','top2'], tp = [1,2,3,4];
+    tiers.forEach((t,idx) => { const actual = resultsCache[t]||[]; (tips[t]||[]).forEach(team => { if (actual.includes(team)) pts += tp[idx]; }); });
+    if (resultsCache.winner && tips.winner === resultsCache.winner) pts += 6;
+    if (resultsCache.scorer && tips.scorer && tips.scorer.toLowerCase().trim() === resultsCache.scorer.toLowerCase().trim()) pts += 5;
+    await sb.from('scores').upsert({ user_name: u.name, points: pts, updated_at: new Date().toISOString() }, { onConflict: 'user_name' });
+  }
+  showMsg(document.getElementById('recalc-msg'), 'Alla poäng uppdaterade!', 'ok');
+}
+
+async function loadResults() {
+  const { data } = await sb.from('results').select('data').limit(1).single();
+  if (data) resultsCache = data.data;
+}
+
+function showMsg(el, text, type) {
+  el.className = 'msg ' + type;
+  el.textContent = text;
+}
+
+loadResults();
+</script>
+</body>
+</html>
