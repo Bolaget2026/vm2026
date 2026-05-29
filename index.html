@@ -234,18 +234,18 @@ const LOCK_DATE = new Date('2026-06-11T00:00:00');
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const GROUPS = {
-  A: ['Mexico','South Africa','Ecuador','Senegal'],
-  B: ['Canada','Bosnia and Herzegovina','Qatar','Switzerland'],
-  C: ['Uruguay','Slovakia','Cameroon','Egypt'],
+  A: ['Mexico','South Africa','South Korea','Czechia'],
+  B: ['Canada','Switzerland','Qatar','Bosnia and Herzegovina'],
+  C: ['Brazil','Morocco','Scotland','Haiti'],
   D: ['USA','Paraguay','Australia','Turkey'],
-  E: ['Germany','Japan','Chile','Belgium'],
-  F: ['Spain','Cabo Verde','Saudi Arabia','Czechia'],
-  G: ['Brazil','Morocco','Croatia','Austria'],
-  H: ['France','Jordan','England','Serbia'],
-  I: ['Portugal','DRC','Nigeria','Peru'],
-  J: ['Argentina','North Macedonia','Indonesia','New Zealand'],
-  K: ['Netherlands','Iran','UAE','Venezuela'],
-  L: ['Colombia','South Korea','Uzbekistan','Haiti']
+  E: ['Germany','Curacao','Ivory Coast','Ecuador'],
+  F: ['Netherlands','Japan','Tunisia','Sweden'],
+  G: ['Belgium','Egypt','Iran','New Zealand'],
+  H: ['Spain','Cape Verde','Saudi Arabia','Uruguay'],
+  I: ['France','Senegal','Norway','Iraq'],
+  J: ['Argentina','Algeria','Austria','Jordan'],
+  K: ['Portugal','Colombia','Uzbekistan','DR Congo'],
+  L: ['England','Croatia','Ghana','Panama']
 };
 const ALL_TEAMS = Object.values(GROUPS).flat();
 
