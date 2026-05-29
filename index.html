@@ -6,68 +6,101 @@
 <title>VM 2026 — Tipset</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+  :root {
+    --green-dark: #1a4a2e;
+    --green-mid: #2d7a4f;
+    --green-light: #3da066;
+    --green-pale: #e8f5ee;
+    --green-stripe: #f0f8f3;
+    --gold: #c9a227;
+    --gold-light: #fff8e1;
+    --white: #ffffff;
+    --off-white: #f7faf8;
+    --border: #d4e8db;
+    --text: #1a2e22;
+    --text-muted: #5a7a66;
+    --text-light: #8aaa96;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; font-size: 15px; }
-  .app { max-width: 680px; margin: 0 auto; padding: 1rem; }
-  header { padding: 1.5rem 0 1rem; border-bottom: 1px solid #e0e0d8; margin-bottom: 1.25rem; }
-  header h1 { font-size: 22px; font-weight: 600; }
-  header p { font-size: 13px; color: #666; margin-top: 2px; }
-  .user-bar { font-size: 13px; color: #555; margin-top: 6px; }
-  .user-bar span { font-weight: 500; color: #1a1a1a; }
-  nav { display: flex; gap: 6px; margin-bottom: 1.5rem; flex-wrap: wrap; }
-  .nav-btn { padding: 7px 16px; font-size: 13px; border: 1px solid #ccc; border-radius: 20px; background: white; color: #333; cursor: pointer; transition: all 0.15s; }
-  .nav-btn:hover { border-color: #999; }
-  .nav-btn.active { background: #1a1a1a; color: white; border-color: #1a1a1a; }
-  .section { display: none; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--off-white); color: var(--text); font-size: 15px; }
+  .app { max-width: 680px; margin: 0 auto; padding: 0; }
+  header {
+    background: linear-gradient(135deg, var(--green-dark) 0%, var(--green-mid) 100%);
+    padding: 1.5rem 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+  header h1 { font-size: 24px; font-weight: 700; color: white; letter-spacing: -0.3px; }
+  header p { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 3px; }
+  .user-bar { font-size: 13px; color: rgba(255,255,255,0.75); margin-top: 8px; }
+  .user-bar span { font-weight: 600; color: white; }
+  .user-bar a { color: rgba(255,255,255,0.6); font-size: 12px; }
+  nav { display: flex; gap: 6px; margin-bottom: 1.25rem; flex-wrap: wrap; padding: 0 1rem; }
+  .nav-btn { padding: 7px 16px; font-size: 13px; border: 1.5px solid var(--border); border-radius: 20px; background: white; color: var(--text-muted); cursor: pointer; transition: all 0.15s; font-weight: 500; }
+  .nav-btn:hover { border-color: var(--green-mid); color: var(--green-mid); }
+  .nav-btn.active { background: var(--green-dark); color: white; border-color: var(--green-dark); }
+  .section { display: none; padding: 0 1rem 2rem; }
   .section.active { display: block; }
-  .card { background: white; border: 1px solid #e0e0d8; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
-  .card h3 { font-size: 14px; font-weight: 600; color: #444; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .card { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+  .card h3 { font-size: 12px; font-weight: 700; color: var(--green-mid); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; }
   input[type=text], input[type=password], select {
     width: 100%; padding: 10px 12px; font-size: 14px;
-    border: 1px solid #ddd; border-radius: 8px; background: white;
-    color: #1a1a1a; margin-bottom: 0.75rem; outline: none;
+    border: 1.5px solid var(--border); border-radius: 8px; background: white;
+    color: var(--text); margin-bottom: 0.75rem; outline: none;
+    transition: border-color 0.15s;
   }
-  input:focus, select:focus { border-color: #1a1a1a; }
-  .btn { width: 100%; padding: 11px; font-size: 14px; font-weight: 500; background: #1a1a1a; color: white; border: none; border-radius: 8px; cursor: pointer; transition: opacity 0.15s; }
-  .btn:hover { opacity: 0.85; }
-  .btn-outline { background: white; color: #1a1a1a; border: 1px solid #ccc; }
-  .btn-outline:hover { background: #f5f5f0; opacity: 1; }
+  input:focus, select:focus { border-color: var(--green-mid); }
+  .btn { width: 100%; padding: 12px; font-size: 14px; font-weight: 600; background: var(--green-dark); color: white; border: none; border-radius: 8px; cursor: pointer; transition: background 0.15s; letter-spacing: 0.02em; }
+  .btn:hover { background: var(--green-mid); }
+  .btn-outline { background: white; color: var(--green-dark); border: 1.5px solid var(--border); }
+  .btn-outline:hover { background: var(--green-pale); border-color: var(--green-mid); }
   .msg { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 0.75rem; }
-  .msg.ok { background: #e8f5e9; color: #2e7d32; }
+  .msg.ok { background: var(--green-pale); color: var(--green-dark); border: 1px solid #b2dcc2; }
   .msg.err { background: #fdecea; color: #c62828; }
   .tabs { display: flex; gap: 4px; margin-bottom: 1.25rem; }
-  .tab { padding: 6px 14px; font-size: 13px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; background: white; color: #555; transition: all 0.15s; }
-  .tab.active { background: #1a1a1a; color: white; border-color: #1a1a1a; }
-  .group-label { font-size: 11px; color: #999; margin: 1rem 0 0.4rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
-  .match-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f0f0e8; }
+  .tab { padding: 7px 14px; font-size: 13px; border: 1.5px solid var(--border); border-radius: 6px; cursor: pointer; background: white; color: var(--text-muted); transition: all 0.15s; font-weight: 500; }
+  .tab:hover { border-color: var(--green-mid); }
+  .tab.active { background: var(--green-dark); color: white; border-color: var(--green-dark); }
+  .group-label { font-size: 11px; color: var(--green-mid); margin: 1rem 0 0.4rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; display: flex; align-items: center; gap: 6px; }
+  .group-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .match-row { display: flex; align-items: center; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--green-stripe); }
   .match-row:last-child { border-bottom: none; }
-  .match-num { color: #bbb; font-size: 11px; width: 28px; flex-shrink: 0; }
-  .teams { flex: 1; font-size: 13px; line-height: 1.3; }
+  .match-num { color: var(--text-light); font-size: 11px; width: 28px; flex-shrink: 0; }
+  .teams { flex: 1; font-size: 13px; line-height: 1.35; color: var(--text); }
+  .teams .vs { color: var(--text-light); font-size: 11px; }
   .outcome-btns { display: flex; gap: 3px; flex-shrink: 0; }
-  .outcome-btn { padding: 4px 8px; font-size: 11px; border: 1px solid #ddd; border-radius: 5px; background: white; color: #555; cursor: pointer; white-space: nowrap; transition: all 0.1s; }
-  .outcome-btn:hover { border-color: #999; }
-  .outcome-btn.selected { background: #1a1a1a; color: white; border-color: #1a1a1a; }
-  .tag { display: inline-block; font-size: 12px; padding: 4px 10px; border-radius: 16px; margin: 3px; cursor: pointer; border: 1px solid #ddd; background: white; color: #444; transition: all 0.1s; }
-  .tag:hover { border-color: #999; }
-  .tag.sel { background: #1a1a1a; color: white; border-color: #1a1a1a; }
+  .outcome-btn { padding: 5px 9px; font-size: 11px; border: 1.5px solid var(--border); border-radius: 5px; background: white; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.1s; font-weight: 500; }
+  .outcome-btn:hover { border-color: var(--green-mid); color: var(--green-mid); }
+  .outcome-btn.selected { background: var(--green-dark); color: white; border-color: var(--green-dark); }
+  .tag { display: inline-block; font-size: 12px; padding: 5px 11px; border-radius: 16px; margin: 3px; cursor: pointer; border: 1.5px solid var(--border); background: white; color: var(--text-muted); transition: all 0.1s; font-weight: 500; }
+  .tag:hover { border-color: var(--green-mid); color: var(--green-mid); }
+  .tag.sel { background: var(--green-dark); color: white; border-color: var(--green-dark); }
   .tag.disabled { opacity: 0.4; cursor: default; }
-  .progress-bar { height: 4px; background: #eee; border-radius: 2px; margin-bottom: 0.5rem; }
-  .progress-fill { height: 100%; background: #1a1a1a; border-radius: 2px; transition: width 0.3s; }
-  .progress-text { font-size: 12px; color: #888; margin-bottom: 1rem; }
+  .progress-bar { height: 5px; background: var(--border); border-radius: 3px; margin-bottom: 0.5rem; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--green-mid), var(--green-light)); border-radius: 3px; transition: width 0.3s; }
+  .progress-text { font-size: 12px; color: var(--text-muted); margin-bottom: 1rem; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { text-align: left; padding: 8px 10px; color: #888; font-weight: 500; border-bottom: 1px solid #e0e0d8; font-size: 12px; }
-  td { padding: 10px 10px; border-bottom: 1px solid #f0f0e8; }
+  th { text-align: left; padding: 8px 10px; color: var(--text-muted); font-weight: 600; border-bottom: 2px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+  td { padding: 11px 10px; border-bottom: 1px solid var(--green-stripe); }
+  tr:nth-child(even) td { background: var(--green-stripe); }
   tr:last-child td { border-bottom: none; }
-  .rank-num { color: #bbb; font-size: 12px; }
-  .rank-1 { color: #c9a227; font-weight: 600; }
-  .pts-total { font-weight: 600; font-size: 15px; }
-  .winner-badge { display: inline-block; background: #fff8e1; color: #c9a227; font-size: 11px; padding: 2px 8px; border-radius: 10px; border: 1px solid #f0d060; margin-left: 6px; }
-  .loader { text-align: center; padding: 2rem; color: #888; font-size: 13px; }
+  .rank-num { color: var(--text-light); font-size: 12px; }
+  .rank-1 { color: var(--gold); font-weight: 700; font-size: 14px; }
+  .pts-total { font-weight: 700; font-size: 15px; color: var(--green-dark); }
+  .winner-badge { display: inline-block; background: var(--gold-light); color: var(--gold); font-size: 11px; padding: 2px 8px; border-radius: 10px; border: 1px solid #f0d060; margin-left: 6px; font-weight: 600; }
+  .loader { text-align: center; padding: 2rem; color: var(--text-muted); font-size: 13px; }
   .save-sticky { position: sticky; bottom: 1rem; z-index: 10; padding-top: 0.5rem; }
+  .hero-info { background: var(--green-pale); border: 1px solid #b2dcc2; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+  .hero-info h2 { font-size: 16px; font-weight: 700; color: var(--green-dark); margin-bottom: 0.5rem; }
+  .hero-info p { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+  .points-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 0.75rem; }
+  .points-item { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; }
+  .points-item .pts { font-size: 20px; font-weight: 700; color: var(--green-dark); }
+  .points-item .label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
   @media (max-width: 480px) {
-    .outcome-btn { padding: 4px 5px; font-size: 10px; }
+    .outcome-btn { padding: 4px 6px; font-size: 10px; }
     .teams { font-size: 12px; }
     th, td { padding: 8px 6px; }
+    .points-grid { grid-template-columns: 1fr 1fr; }
   }
 </style>
 </head>
@@ -88,6 +121,16 @@
 
   <!-- REGISTER / LOGIN -->
   <div id="register" class="section active">
+    <div class="hero-info">
+      <h2>⚽ Hur det funkar</h2>
+      <p>Tippa alla 48 gruppspelsmatcher, vilka lag som går vidare i slutspelet, turneringsvinnare och skyttekung. Allt måste tippas innan 11 juni.</p>
+      <div class="points-grid">
+        <div class="points-item"><div class="pts">1p</div><div class="label">Rätt matchvinnare (grupp)</div></div>
+        <div class="points-item"><div class="pts">1–4p</div><div class="label">Rätt lag i slutspelsrunda</div></div>
+        <div class="points-item"><div class="pts">6p</div><div class="label">Rätt turneringsvinnare</div></div>
+        <div class="points-item"><div class="pts">5p</div><div class="label">Rätt skyttekung</div></div>
+      </div>
+    </div>
     <div class="card" id="reg-card">
       <h3>Registrera dig</h3>
       <input type="text" id="reg-name" placeholder="Ditt namn" />
@@ -249,16 +292,97 @@ const GROUPS = {
 };
 const ALL_TEAMS = Object.values(GROUPS).flat();
 
-function generateMatches() {
-  let matches = [], num = 1;
-  Object.entries(GROUPS).forEach(([g, teams]) => {
-    for (let i = 0; i < teams.length; i++)
-      for (let j = i+1; j < teams.length; j++)
-        matches.push({ id: `M${num++}`, group: g, home: teams[i], away: teams[j] });
-  });
-  return matches;
-}
-const MATCHES = generateMatches();
+const FLAGS = {
+  'Mexico':'🇲🇽','South Africa':'🇿🇦','South Korea':'🇰🇷','Czechia':'🇨🇿',
+  'Canada':'🇨🇦','Switzerland':'🇨🇭','Qatar':'🇶🇦','Bosnia and Herzegovina':'🇧🇦',
+  'Brazil':'🇧🇷','Morocco':'🇲🇦','Scotland':'🏴󠁧󠁢󠁳󠁣󠁴󠁿','Haiti':'🇭🇹',
+  'USA':'🇺🇸','Paraguay':'🇵🇾','Australia':'🇦🇺','Turkey':'🇹🇷',
+  'Germany':'🇩🇪','Curacao':'🇨🇼','Ivory Coast':'🇨🇮','Ecuador':'🇪🇨',
+  'Netherlands':'🇳🇱','Japan':'🇯🇵','Tunisia':'🇹🇳','Sweden':'🇸🇪',
+  'Belgium':'🇧🇪','Egypt':'🇪🇬','Iran':'🇮🇷','New Zealand':'🇳🇿',
+  'Spain':'🇪🇸','Cape Verde':'🇨🇻','Saudi Arabia':'🇸🇦','Uruguay':'🇺🇾',
+  'France':'🇫🇷','Senegal':'🇸🇳','Norway':'🇳🇴','Iraq':'🇮🇶',
+  'Argentina':'🇦🇷','Algeria':'🇩🇿','Austria':'🇦🇹','Jordan':'🇯🇴',
+  'Portugal':'🇵🇹','Colombia':'🇨🇴','Uzbekistan':'🇺🇿','DR Congo':'🇨🇩',
+  'England':'🏴󠁧󠁢󠁥󠁮󠁧󠁿','Croatia':'🇭🇷','Ghana':'🇬🇭','Panama':'🇵🇦'
+};
+function flag(team) { return FLAGS[team] || ''; }
+
+// Tider i svensk sommartid (CEST = ET+6)
+const MATCHES = [
+  {id:'M1', group:'A', home:'Mexico', away:'South Africa', date:'11 jun', time:'21:00'},
+  {id:'M2', group:'A', home:'South Korea', away:'Czechia', date:'12 jun', time:'04:00'},
+  {id:'M3', group:'B', home:'Canada', away:'Bosnia and Herzegovina', date:'12 jun', time:'21:00'},
+  {id:'M4', group:'D', home:'USA', away:'Paraguay', date:'13 jun', time:'03:00'},
+  {id:'M5', group:'B', home:'Qatar', away:'Switzerland', date:'13 jun', time:'21:00'},
+  {id:'M6', group:'C', home:'Brazil', away:'Morocco', date:'14 jun', time:'00:00'},
+  {id:'M7', group:'C', home:'Haiti', away:'Scotland', date:'14 jun', time:'03:00'},
+  {id:'M8', group:'D', home:'Australia', away:'Turkey', date:'14 jun', time:'06:00'},
+  {id:'M9', group:'E', home:'Germany', away:'Curacao', date:'14 jun', time:'19:00'},
+  {id:'M10', group:'F', home:'Netherlands', away:'Japan', date:'14 jun', time:'22:00'},
+  {id:'M11', group:'E', home:'Ivory Coast', away:'Ecuador', date:'15 jun', time:'01:00'},
+  {id:'M12', group:'F', home:'Sweden', away:'Tunisia', date:'15 jun', time:'04:00'},
+  {id:'M13', group:'H', home:'Spain', away:'Cape Verde', date:'15 jun', time:'18:00'},
+  {id:'M14', group:'G', home:'Belgium', away:'Egypt', date:'15 jun', time:'21:00'},
+  {id:'M15', group:'H', home:'Saudi Arabia', away:'Uruguay', date:'16 jun', time:'00:00'},
+  {id:'M16', group:'G', home:'Iran', away:'New Zealand', date:'16 jun', time:'03:00'},
+  {id:'M17', group:'I', home:'France', away:'Senegal', date:'16 jun', time:'21:00'},
+  {id:'M18', group:'I', home:'Iraq', away:'Norway', date:'17 jun', time:'00:00'},
+  {id:'M19', group:'J', home:'Argentina', away:'Algeria', date:'17 jun', time:'03:00'},
+  {id:'M20', group:'J', home:'Austria', away:'Jordan', date:'17 jun', time:'06:00'},
+  {id:'M21', group:'K', home:'Portugal', away:'DR Congo', date:'17 jun', time:'19:00'},
+  {id:'M22', group:'L', home:'England', away:'Croatia', date:'17 jun', time:'22:00'},
+  {id:'M23', group:'L', home:'Ghana', away:'Panama', date:'18 jun', time:'01:00'},
+  {id:'M24', group:'K', home:'Uzbekistan', away:'Colombia', date:'18 jun', time:'04:00'},
+  {id:'M25', group:'A', home:'Czechia', away:'South Africa', date:'18 jun', time:'18:00'},
+  {id:'M26', group:'B', home:'Switzerland', away:'Bosnia and Herzegovina', date:'18 jun', time:'21:00'},
+  {id:'M27', group:'B', home:'Canada', away:'Qatar', date:'19 jun', time:'00:00'},
+  {id:'M28', group:'A', home:'Mexico', away:'South Korea', date:'19 jun', time:'03:00'},
+  {id:'M29', group:'D', home:'USA', away:'Australia', date:'19 jun', time:'21:00'},
+  {id:'M30', group:'C', home:'Scotland', away:'Morocco', date:'20 jun', time:'00:00'},
+  {id:'M31', group:'C', home:'Brazil', away:'Haiti', date:'20 jun', time:'02:30'},
+  {id:'M32', group:'D', home:'Turkey', away:'Paraguay', date:'20 jun', time:'05:00'},
+  {id:'M33', group:'F', home:'Netherlands', away:'Sweden', date:'20 jun', time:'19:00'},
+  {id:'M34', group:'E', home:'Germany', away:'Ivory Coast', date:'20 jun', time:'22:00'},
+  {id:'M35', group:'E', home:'Ecuador', away:'Curacao', date:'21 jun', time:'02:00'},
+  {id:'M36', group:'F', home:'Tunisia', away:'Japan', date:'21 jun', time:'06:00'},
+  {id:'M37', group:'H', home:'Spain', away:'Saudi Arabia', date:'21 jun', time:'18:00'},
+  {id:'M38', group:'G', home:'Belgium', away:'Iran', date:'21 jun', time:'21:00'},
+  {id:'M39', group:'H', home:'Uruguay', away:'Cape Verde', date:'22 jun', time:'00:00'},
+  {id:'M40', group:'G', home:'New Zealand', away:'Egypt', date:'22 jun', time:'03:00'},
+  {id:'M41', group:'J', home:'Argentina', away:'Austria', date:'22 jun', time:'19:00'},
+  {id:'M42', group:'I', home:'France', away:'Iraq', date:'22 jun', time:'23:00'},
+  {id:'M43', group:'I', home:'Norway', away:'Senegal', date:'23 jun', time:'02:00'},
+  {id:'M44', group:'J', home:'Jordan', away:'Algeria', date:'23 jun', time:'05:00'},
+  {id:'M45', group:'K', home:'Portugal', away:'Uzbekistan', date:'23 jun', time:'19:00'},
+  {id:'M46', group:'L', home:'England', away:'Ghana', date:'23 jun', time:'22:00'},
+  {id:'M47', group:'L', home:'Panama', away:'Croatia', date:'24 jun', time:'01:00'},
+  {id:'M48', group:'K', home:'Colombia', away:'DR Congo', date:'24 jun', time:'04:00'},
+  {id:'M49', group:'A', home:'South Africa', away:'South Korea', date:'24 jun', time:'21:00'},
+  {id:'M50', group:'A', home:'Czechia', away:'Mexico', date:'25 jun', time:'03:00'},
+  {id:'M51', group:'B', home:'Bosnia and Herzegovina', away:'Qatar', date:'25 jun', time:'21:00'},
+  {id:'M52', group:'B', home:'Switzerland', away:'Canada', date:'25 jun', time:'21:00'},
+  {id:'M53', group:'C', home:'Scotland', away:'Brazil', date:'25 jun', time:'00:00'},
+  {id:'M54', group:'C', home:'Morocco', away:'Haiti', date:'25 jun', time:'00:00'},
+  {id:'M55', group:'D', home:'Turkey', away:'USA', date:'26 jun', time:'04:00'},
+  {id:'M56', group:'D', home:'Paraguay', away:'Australia', date:'26 jun', time:'04:00'},
+  {id:'M57', group:'E', home:'Germany', away:'Ecuador', date:'26 jun', time:'21:00'},
+  {id:'M58', group:'E', home:'Curacao', away:'Ivory Coast', date:'26 jun', time:'21:00'},
+  {id:'M59', group:'F', home:'Japan', away:'Sweden', date:'27 jun', time:'01:00'},
+  {id:'M60', group:'F', home:'Tunisia', away:'Netherlands', date:'27 jun', time:'01:00'},
+  {id:'M61', group:'G', home:'Belgium', away:'New Zealand', date:'26 jun', time:'21:00'},
+  {id:'M62', group:'G', home:'Egypt', away:'Iran', date:'26 jun', time:'21:00'},
+  {id:'M63', group:'H', home:'Spain', away:'Uruguay', date:'27 jun', time:'21:00'},
+  {id:'M64', group:'H', home:'Cape Verde', away:'Saudi Arabia', date:'27 jun', time:'21:00'},
+  {id:'M65', group:'I', home:'France', away:'Norway', date:'27 jun', time:'03:00'},
+  {id:'M66', group:'I', home:'Senegal', away:'Iraq', date:'27 jun', time:'21:00'},
+  {id:'M67', group:'J', home:'Algeria', away:'Austria', date:'28 jun', time:'04:00'},
+  {id:'M68', group:'J', home:'Jordan', away:'Argentina', date:'28 jun', time:'04:00'},
+  {id:'M69', group:'K', home:'Colombia', away:'Portugal', date:'28 jun', time:'01:30'},
+  {id:'M70', group:'K', home:'DR Congo', away:'Uzbekistan', date:'28 jun', time:'01:30'},
+  {id:'M71', group:'L', home:'Panama', away:'England', date:'27 jun', time:'23:00'},
+  {id:'M72', group:'L', home:'Croatia', away:'Ghana', date:'27 jun', time:'23:00'},
+];
 
 let currentUser = null;
 let isAdmin = false;
@@ -365,10 +489,11 @@ function renderTipps() {
 function renderMatches() {
   const container = document.getElementById('matches-container');
   container.innerHTML = '';
-  let currentGroup = '';
-  MATCHES.forEach(m => {
-    if (m.group !== currentGroup) {
-      currentGroup = m.group;
+  const sorted = [...MATCHES].sort((a,b) => a.group.localeCompare(b.group));
+  const seenGroups = new Set();
+  sorted.forEach(m => {
+    if (!seenGroups.has(m.group)) {
+      seenGroups.add(m.group);
       const gl = document.createElement('div');
       gl.className = 'group-label';
       gl.textContent = `Grupp ${m.group}`;
@@ -379,16 +504,17 @@ function renderMatches() {
       container.appendChild(card);
     }
     const card = document.getElementById(`gc-${m.group}`);
-    const sel = currentTips.matches[m.id] || '';
+    const sel = (currentTips.matches && currentTips.matches[m.id]) || '';
     const row = document.createElement('div');
     row.className = 'match-row';
     row.innerHTML = `
       <span class="match-num">${m.id}</span>
-      <span class="teams">${m.home}<br><span style="color:#aaa;font-size:11px">vs</span> ${m.away}</span>
+      <span class="teams">${flag(m.home)} ${m.home}<br><span class="vs">vs</span> ${flag(m.away)} ${m.away}</span>
+      <span style="font-size:11px;color:var(--text-muted);text-align:right;flex-shrink:0;line-height:1.4">${m.date}<br>${m.time}</span>
       <div class="outcome-btns">
-        <button class="outcome-btn ${sel===m.home?'selected':''}" onclick="selectOutcome('${m.id}','${m.home}',this)">${m.home.split(' ')[0]}</button>
+        <button class="outcome-btn ${sel===m.home?'selected':''}" onclick="selectOutcome('${m.id}','${m.home}',this)">${flag(m.home)}</button>
         <button class="outcome-btn ${sel==='X'?'selected':''}" onclick="selectOutcome('${m.id}','X',this)">X</button>
-        <button class="outcome-btn ${sel===m.away?'selected':''}" onclick="selectOutcome('${m.id}','${m.away}',this)">${m.away.split(' ')[0]}</button>
+        <button class="outcome-btn ${sel===m.away?'selected':''}" onclick="selectOutcome('${m.id}','${m.away}',this)">${flag(m.away)}</button>
       </div>`;
     card.appendChild(row);
   });
