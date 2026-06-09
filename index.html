@@ -237,15 +237,23 @@
     <div id="admin-knockout-panel" style="display:none">
       <div class="card">
         <h3>Ange lag som gått vidare</h3>
-        <p style="font-size:12px;color:#888;margin-bottom:1rem">Kommaseparerade lagnamn — stavning måste matcha exakt</p>
-        <label style="font-size:13px;color:#555;display:block;margin-bottom:4px">Topp 16</label>
-        <input type="text" id="actual-top16" placeholder="Brasilien, Frankrike, ..." />
-        <label style="font-size:13px;color:#555;display:block;margin-bottom:4px">Topp 8</label>
-        <input type="text" id="actual-top8" placeholder="8 lag" />
-        <label style="font-size:13px;color:#555;display:block;margin-bottom:4px">Topp 4</label>
-        <input type="text" id="actual-top4" placeholder="4 lag" />
-        <label style="font-size:13px;color:#555;display:block;margin-bottom:4px">Finalisterna</label>
-        <input type="text" id="actual-top2" placeholder="2 lag" />
+        <p style="font-size:12px;color:#888;margin-bottom:1rem">Klicka på lagen som faktiskt gick vidare i varje runda</p>
+        <div style="margin-bottom:1.25rem">
+          <div style="font-size:13px;font-weight:600;color:var(--green-mid);margin-bottom:6px">TOPP 16 — välj 16 lag <span id="admin-top16-count" style="font-weight:400;color:#888">(0/16 valda)</span></div>
+          <div id="admin-top16-tags"></div>
+        </div>
+        <div style="margin-bottom:1.25rem">
+          <div style="font-size:13px;font-weight:600;color:var(--green-mid);margin-bottom:6px">TOPP 8 — kvartsfinal <span id="admin-top8-count" style="font-weight:400;color:#888">(0/8 valda)</span></div>
+          <div id="admin-top8-tags"></div>
+        </div>
+        <div style="margin-bottom:1.25rem">
+          <div style="font-size:13px;font-weight:600;color:var(--green-mid);margin-bottom:6px">TOPP 4 — semifinal <span id="admin-top4-count" style="font-weight:400;color:#888">(0/4 valda)</span></div>
+          <div id="admin-top4-tags"></div>
+        </div>
+        <div style="margin-bottom:1.25rem">
+          <div style="font-size:13px;font-weight:600;color:var(--green-mid);margin-bottom:6px">FINALISTERNA — 2 lag <span id="admin-top2-count" style="font-weight:400;color:#888">(0/2 valda)</span></div>
+          <div id="admin-top2-tags"></div>
+        </div>
         <button class="btn" onclick="saveKnockout()">Spara slutspelsresultat</button>
         <div id="knockout-msg"></div>
       </div>
@@ -264,6 +272,12 @@
     <div style="margin-top:1rem">
       <button class="btn btn-outline" onclick="recalcAll()">Räkna om alla poäng</button>
       <div id="recalc-msg"></div>
+    </div>
+    <div class="card" style="margin-top:1rem">
+      <h3>Ta bort användare</h3>
+      <select id="delete-user-select"><option value="">Välj användare...</option></select>
+      <button class="btn" style="background:#c62828" onclick="deleteUser()">Ta bort</button>
+      <div id="delete-msg"></div>
     </div>
   </div>
 </div>
@@ -453,6 +467,7 @@ function adminLogin() {
   isAdmin = true;
   document.getElementById('admin-nav-btn').style.display = '';
   showMsg(msg, 'Admin-läge aktiverat.', 'ok');
+  setTimeout(renderAdminKnockout, 100);
 }
 
 function logout() {
@@ -608,7 +623,7 @@ async function loadTable() {
   if (!scores.length) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:1.5rem">Inga deltagare ännu</td></tr>';
   } else {
-    scores.forEach((s, i) => {
+    const rows = scores.map(s => {
       const tips = tipsMap[s.user_name] || {};
       let gPts = 0, sPts = 0, wPts = 0, skPts = 0;
       MATCHES.forEach(m => { if (resultsCache.matches[m.id] && tips.matches && tips.matches[m.id] === resultsCache.matches[m.id]) gPts++; });
@@ -616,12 +631,16 @@ async function loadTable() {
       tiers.forEach((t,idx) => { const actual = resultsCache[t]||[]; (tips[t]||[]).forEach(team => { if (actual.includes(team)) sPts += tp[idx]; }); });
       if (resultsCache.winner && tips.winner === resultsCache.winner) wPts = 6;
       if (resultsCache.scorer && tips.scorer && tips.scorer.toLowerCase().trim() === resultsCache.scorer.toLowerCase().trim()) skPts = 5;
+      return { name: s.user_name, gPts, sPts, wPts, skPts, total: gPts + sPts + wPts + skPts };
+    });
+    rows.sort((a, b) => b.total - a.total);
+    rows.forEach((r, i) => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td class="rank-num ${i===0?'rank-1':''}">${i+1}${i===0?' 🥇':''}</td>
-        <td>${s.user_name}${s.user_name === currentUser ? '<span class="winner-badge">dig</span>' : ''}</td>
-        <td>${gPts}</td><td>${sPts}</td><td>${wPts}</td><td>${skPts}</td>
-        <td class="pts-total">${s.points}</td>`;
+        <td>${r.name}${r.name === currentUser ? '<span class="winner-badge">dig</span>' : ''}</td>
+        <td>${r.gPts}</td><td>${r.sPts}</td><td>${r.wPts}</td><td>${r.skPts}</td>
+        <td class="pts-total">${r.total}</td>`;
       tbody.appendChild(tr);
     });
   }
@@ -676,12 +695,43 @@ async function saveResults() {
   }
 }
 
+let adminKnockout = { top16: [], top8: [], top4: [], top2: [] };
+
+function renderAdminKnockout() {
+  const configs = [
+    { key: 'top16', max: 16, tagId: 'admin-top16-tags', countId: 'admin-top16-count' },
+    { key: 'top8',  max: 8,  tagId: 'admin-top8-tags',  countId: 'admin-top8-count'  },
+    { key: 'top4',  max: 4,  tagId: 'admin-top4-tags',  countId: 'admin-top4-count'  },
+    { key: 'top2',  max: 2,  tagId: 'admin-top2-tags',  countId: 'admin-top2-count'  },
+  ];
+  // Pre-populate from resultsCache
+  configs.forEach(c => { adminKnockout[c.key] = [...(resultsCache[c.key] || [])]; });
+  configs.forEach(c => {
+    const el = document.getElementById(c.tagId);
+    if (!el) return;
+    el.innerHTML = '';
+    ALL_TEAMS.forEach(t => {
+      const sel = adminKnockout[c.key].includes(t);
+      const tag = document.createElement('span');
+      tag.className = 'tag' + (sel ? ' sel' : '');
+      tag.textContent = flag(t) + ' ' + t;
+      tag.onclick = () => {
+        const idx = adminKnockout[c.key].indexOf(t);
+        if (idx > -1) { adminKnockout[c.key].splice(idx, 1); tag.classList.remove('sel'); }
+        else if (adminKnockout[c.key].length < c.max) { adminKnockout[c.key].push(t); tag.classList.add('sel'); }
+        document.getElementById(c.countId).textContent = `(${adminKnockout[c.key].length}/${c.max} valda)`;
+      };
+      el.appendChild(tag);
+    });
+    document.getElementById(c.countId).textContent = `(${adminKnockout[c.key].length}/${c.max} valda)`;
+  });
+}
+
 async function saveKnockout() {
-  const parse = id => document.getElementById(id).value.split(',').map(s=>s.trim()).filter(Boolean);
-  resultsCache.top16 = parse('actual-top16');
-  resultsCache.top8 = parse('actual-top8');
-  resultsCache.top4 = parse('actual-top4');
-  resultsCache.top2 = parse('actual-top2');
+  resultsCache.top16 = adminKnockout.top16;
+  resultsCache.top8 = adminKnockout.top8;
+  resultsCache.top4 = adminKnockout.top4;
+  resultsCache.top2 = adminKnockout.top2;
   await saveResults();
   showMsg(document.getElementById('knockout-msg'), 'Sparat!', 'ok');
 }
@@ -723,7 +773,32 @@ function showMsg(el, text, type) {
   el.textContent = text;
 }
 
+async function loadUsersForAdmin() {
+  const { data } = await sb.from('users').select('name').order('name');
+  const sel = document.getElementById('delete-user-select');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Välj användare...</option>';
+  (data || []).forEach(u => {
+    const o = document.createElement('option');
+    o.value = u.name; o.textContent = u.name;
+    sel.appendChild(o);
+  });
+}
+
+async function deleteUser() {
+  const name = document.getElementById('delete-user-select').value;
+  const msg = document.getElementById('delete-msg');
+  if (!name) { showMsg(msg, 'Välj en användare.', 'err'); return; }
+  if (!confirm(`Ta bort ${name}? Det går inte att ångra.`)) return;
+  await sb.from('scores').delete().eq('user_name', name);
+  await sb.from('tips').delete().eq('user_name', name);
+  await sb.from('users').delete().eq('name', name);
+  showMsg(msg, `${name} borttagen.`, 'ok');
+  loadUsersForAdmin();
+}
+
 loadResults();
+loadUsersForAdmin();
 </script>
 </body>
 </html>
